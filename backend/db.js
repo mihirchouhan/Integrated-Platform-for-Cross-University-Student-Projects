@@ -9,4 +9,3 @@ mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
   .catch(error => {
     console.error('Error connecting to MongoDB:', error);
   });
-

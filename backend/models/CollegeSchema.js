@@ -7,5 +7,4 @@ const collegeSchema = new mongoose.Schema({
   CollegeAdminPassword: { type: String, required: true },
   students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Student' }],
 });
-
 module.exports = mongoose.model('College', collegeSchema);

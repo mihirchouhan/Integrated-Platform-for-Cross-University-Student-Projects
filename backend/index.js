@@ -42,7 +42,7 @@ app.post('/registerCollege', async (req, res) => {
   try {
     const college = new College(req.body);
     await college.save();
-
+    
     collegeCodeMap.set(college.code, college.Cname);
     console.log(collegeCodeMap)
 
@@ -52,43 +52,33 @@ app.post('/registerCollege', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 }); 
-
-app.post('/registerStudent', async (req, res) => {
+let otpMap = {};
+app.post('/sendotp', async (req, res) => {
     try {
       const student = new Student(req.body);
+      const email = req.body.email;
+      const existingStudent = await Student.findOne({ email });
+
+    if(existingStudent)
+    {
+      return res.status(409).json({ error: 'Email already exists. Please use a different email.' });
+    }
+
+
       const collegeCname = collegeCodeMap.get(student.collegeCode);
-      if (!collegeCname) {
-        res.status(404).json({ error: 'College not found for the given collegeCode.' });
-        return;
-      }
-
-      var otp = generateOTP();
-    await sendOTP(student.email, otp);
-    student.otp = otp
-
-
       const emailDomain = student.email.split('@')[1];
 
-      // if(collegeCname.toLowerCase()==emailDomain.toLowerCase()){
-        
-      const college = await College.findOne({ code: student.collegeCode });
-      console.log(college)
-      if(college!=null){
-        
-        college.students.push(student._id);
-        await college.save(); 
-        await student.save();
-        res.json(student);
-      }
-      else{
-        res.json({error:"nothing found"})
-      }
-  
-
-    // }
-    // else{
-    //   res.json("wrong Credentails")
-    // }
+      if(collegeCname.toLowerCase()==emailDomain.toLowerCase()){
+      var otp = generateOTP();
+      console.log(otpMap)
+      otpMap[student.email] = otp.toString();
+      console.log(otpMap)
+    await sendOTP(student.email, otp);
+    res.json({ message: 'OTP sent successfully' });
+  }
+  else{
+    res.json("wrong Credentails")
+  }
 
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -112,18 +102,77 @@ app.post('/registerStudent', async (req, res) => {
     await transporter.sendMail(mailOptions);
   }
 
-app.get('/otp',(req,res)=>{
-  const s = new Student(req.body);
-  const student = Student.find({otp:s.otp})
-  console.log(student)
-  if(student){
-    res.json("otp matched wowo")
-    // res.json({student})
+app.post('/registerStudent', async(req,res)=>{
+
+  const enteredOtp = req.body.otp;
+  // const em = req.body.email;
+  const em = "insanegaming5587@gmail.com"
+  const student = new Student(req.body);
+  
+  const storedOtp = otpMap[em];
+  console.log(storedOtp)
+  
+  // if (!storedOtp) {
+  //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
+  // }
+  
+  // const collegeCname = collegeCodeMap.get(student.collegeCode);
+  // if (!collegeCname) {
+  //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
+  //   return;
+  // }
+  
+   if(enteredOtp == storedOtp){
+
+    
+  const college = await College.findOne({ code: student.collegeCode });
+  console.log(college)
+  if(college!=null){
+    const {collegeCode,password} = req.body
+    
+    college.students.push(student._id);
+    await college.save(); 
+    // await student.save(); 
+    const newUser = new Student({email:em,password:password,collegeCode:collegeCode})
+    await newUser.save();
+    console.log(`Registration successful for email: ${em}`);
+  res.json({ success: true, message: 'Registration successful!' });
   }
   else{
-    res.json("not found")
+    res.json({error:"nothing found"})
   }
+  
+}
+else{
+  res.json("incorect oopt")
+}
 })
+
+
+app.post('/Studentlogin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find the user with the provided email
+    const user = await Student.findOne({ email });
+
+    // If the user is not found, or the password is incorrect, return an error
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    // If email and password are correct, you can generate a JWT token for authentication
+    // For simplicity, let's just respond with a success message
+    res.json({ success: true, message: 'Login successful!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
 
 app.get('/students/:collegeCode', async (req, res) => {
   try {
@@ -139,6 +188,10 @@ app.get('/students/:collegeCode', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

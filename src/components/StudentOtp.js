@@ -1,5 +1,5 @@
 import React from 'react'
-import {useLocation,navigate} from 'react-router-dom'
+import {useLocation,} from 'react-router-dom'
 import { useState } from 'react'
 import '../styles/StudentOtp.css'
 

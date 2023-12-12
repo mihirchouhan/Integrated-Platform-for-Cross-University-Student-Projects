@@ -2,9 +2,10 @@ import React from 'react'
 import bgImg from '../images/img1.jpg';
 import './CollegeRegistration.css';
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 const CollegeRegistration = () => {
 
-
+    const navigate = useNavigate();
     const [collegeCode, setCollegeCode] = useState('');
     const [collegeId, setCollegeId] = useState('');
     const [adminEmail, setAdminEmail] = useState('');
@@ -22,8 +23,10 @@ const CollegeRegistration = () => {
             body: JSON.stringify({code:collegeCode, Cname:collegeId, CollegeAdmin: adminEmail, CollegeAdminPassword:adminPassword })
         })
         const note = await api.json();
+
         if(note){
-            alert("godo")
+            navigate('/Login')
+            console.log("good")
         }
 
 

@@ -67,7 +67,8 @@ app.post('/sendotp', async (req, res) => {
 
       const collegeCname = collegeCodeMap.get(student.collegeCode);
       const emailDomain = student.email.split('@')[1];
-      console.log( typeof collegeCname)
+      console.log( collegeCname)
+      console.log( emailDomain)
       if(collegeCname.toLowerCase()==emailDomain.toLowerCase()){
       var otp = generateOTP();
       console.log(otpMap)

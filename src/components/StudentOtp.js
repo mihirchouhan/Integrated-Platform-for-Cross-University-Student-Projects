@@ -20,10 +20,10 @@ const StudentOtp = () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({email:email,collegeCode:code,password:password})
+            body: JSON.stringify({email:email,collegeCode:code,password:password,otp:otp})
         })
         const note = await api.json();
-        if(note.sucesss){
+        if(note.success){
             alert("registered")
         }
         else{

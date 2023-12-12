@@ -67,15 +67,15 @@ app.post('/sendotp', async (req, res) => {
 
       const collegeCname = collegeCodeMap.get(student.collegeCode);
       const emailDomain = student.email.split('@')[1];
-
+      console.log( typeof collegeCname)
       if(collegeCname.toLowerCase()==emailDomain.toLowerCase()){
       var otp = generateOTP();
       console.log(otpMap)
       otpMap[student.email] = otp.toString();
       console.log(otpMap)
     await sendOTP(student.email, otp);
-    res.json({ message: 'OTP sent successfully' });
-  }
+    res.json({ message: 'OTP sent successfully' , succes:true});
+  } 
   else{
     res.json("wrong Credentails")
   }
@@ -105,8 +105,8 @@ app.post('/sendotp', async (req, res) => {
 app.post('/registerStudent', async(req,res)=>{
 
   const enteredOtp = req.body.otp;
-  // const em = req.body.email;
-  const em = "insanegaming5587@gmail.com"
+  const em = req.body.email;
+  // const em = "insanegaming5587@gmail.com"
   const student = new Student(req.body);
   
   const storedOtp = otpMap[em];

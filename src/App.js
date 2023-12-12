@@ -4,6 +4,8 @@ import { BrowserRouter,Route,Routes } from 'react-router-dom';
 import Admin from './components/Admin';
 import "./App.css"
 import CollegeRegistration from './components/CollegeRegistration';
+import StudentLogin from './components/StudentLogin';
+import StudentOtp from './components/StudentOtp';
 function App() {
   return (
     <div className="App">
@@ -11,6 +13,8 @@ function App() {
         <Routes>
             <Route path='/' element={<Admin/>} />
             <Route path='/CollegeR' element={<CollegeRegistration/>} />
+            <Route path='/Login' element={<StudentLogin/>} />
+            <Route path='/enter' element={<StudentOtp/>} />
            
 
         </Routes> 

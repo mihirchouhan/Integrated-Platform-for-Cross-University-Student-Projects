@@ -25,6 +25,7 @@ const StudentOtp = () => {
         const note = await api.json();
         if(note.success){
             alert("registered")
+            console.log("wowo")
         }
         else{
             alert("note registered")

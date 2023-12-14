@@ -17,7 +17,7 @@ const StudentOtp = () => {
         e.preventDefault();
         const api = await fetch("http://localhost:5000/registerStudent", {
             method: 'POST',
-            headers: {
+            headers: { 
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({email:email,collegeCode:code,password:password,otp:otp})
@@ -28,7 +28,7 @@ const StudentOtp = () => {
             console.log("wowo")
         }
         else{
-            alert("note registered")
+            alert(note.message)
         }
     }
     

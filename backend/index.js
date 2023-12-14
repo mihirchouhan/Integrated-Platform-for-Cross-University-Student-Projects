@@ -105,6 +105,15 @@ app.post('/sendotp', async (req, res) => {
 
 app.post('/registerStudent', async(req,res)=>{
 
+  const email = req.body.email;
+  const existingStudent = await Student.findOne({ email });
+
+    if(existingStudent)
+    {
+      return res.status(409).json({ message: 'Email already exists. Please use a different email.' });
+    }     
+
+
   const enteredOtp = req.body.otp;
   const em = req.body.email;
   // const em = "insanegaming5587@gmail.com"
@@ -113,15 +122,15 @@ app.post('/registerStudent', async(req,res)=>{
   const storedOtp = otpMap[em];
   console.log(storedOtp)
   
-  // if (!storedOtp) {
-  //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
-  // }
+  if (!storedOtp) {
+    return res.status(400).json({ message: 'Email not registered. Please register first.' });
+  }
   
-  // const collegeCname = collegeCodeMap.get(student.collegeCode);
-  // if (!collegeCname) {
-  //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
-  //   return;
-  // }
+  const collegeCname = collegeCodeMap.get(student.collegeCode);
+  if (!collegeCname) {
+    res.status(404).json({ message: 'College not found for the given collegeCode.' });
+    return;
+  }
   
    if(enteredOtp == storedOtp){
 

@@ -4,7 +4,7 @@ const crypto = require('crypto');
 require("./db");
 var cors = require('cors')
 const app = express();
-const PORT = 5000; 
+const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -42,7 +42,7 @@ app.post('/registerCollege', async (req, res) => {
   try {
     const college = new College(req.body);
     await college.save();
-    
+
     collegeCodeMap.set(college.code, college.Cname);
     console.log(collegeCodeMap)
 
@@ -51,102 +51,101 @@ app.post('/registerCollege', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}); 
+});
 let otpMap = {};
 app.post('/sendotp', async (req, res) => {
-    try {
-      const student = new Student(req.body);
-      const email = req.body.email;
-      const existingStudent = await Student.findOne({ email });
+  try {
+    const student = new Student(req.body);
+    const email = req.body.email;
+    const existingStudent = await Student.findOne({ email });
 
-    if(existingStudent)
-    {
+    if (existingStudent) {
       return res.status(409).json({ error: 'Email already exists. Please use a different email.' });
     }
 
 
-      const collegeCname = collegeCodeMap.get(student.collegeCode);
-      const emailDomain = student.email.split('@')[1];
-      console.log( collegeCname)
-      console.log( emailDomain)
-      if(collegeCname.toLowerCase()==emailDomain.toLowerCase()){
+    const collegeCname = collegeCodeMap.get(student.collegeCode);
+    const emailDomain = student.email.split('@')[1];
+    console.log(collegeCname)
+    console.log(emailDomain)
+    if (collegeCname.toLowerCase() == emailDomain.toLowerCase()) {
       var otp = generateOTP();
       console.log(otpMap)
       otpMap[student.email] = otp.toString();
       console.log(otpMap)
-    await sendOTP(student.email, otp);
-    res.json({ message: 'OTP sent successfully' , succes:true});
-  } 
-  else{
-    res.json("wrong Credentails")
-  }
-
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+      await sendOTP(student.email, otp);
+      res.json({ message: 'OTP sent successfully', succes: true });
     }
-  });
+    else {
+      res.json("wrong Credentails")
+    }
 
-
-  function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-  
-  // Function to send OTP via email
-  async function sendOTP(email, otp) {
-    const mailOptions = {
-      from: 'njain5587@gmail.com',
-      to: email,
-      subject: 'Otp functinality bhi implement ker di hai',
-      text: `Your OTP is: ${otp}`,
-    };
-  
-    await transporter.sendMail(mailOptions);
-  }
+});
 
-app.post('/registerStudent', async(req,res)=>{
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Function to send OTP via email
+async function sendOTP(email, otp) {
+  const mailOptions = {
+    from: 'njain5587@gmail.com',
+    to: email,
+    subject: 'Otp functinality bhi implement ker di hai',
+    text: `Your OTP is: ${otp}`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+app.post('/registerStudent', async (req, res) => {
 
   const enteredOtp = req.body.otp;
   const em = req.body.email;
   // const em = "insanegaming5587@gmail.com"
   const student = new Student(req.body);
-  
+
   const storedOtp = otpMap[em];
   console.log(storedOtp)
-  
+
   // if (!storedOtp) {
   //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
   // }
-  
+
   // const collegeCname = collegeCodeMap.get(student.collegeCode);
   // if (!collegeCname) {
   //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
   //   return;
   // }
-  
-   if(enteredOtp == storedOtp){
 
-    
-  const college = await College.findOne({ code: student.collegeCode });
-  console.log(college)
-  if(college!=null){
-    const {collegeCode,password} = req.body
-    
-    college.students.push(student._id);
-    await college.save(); 
-    // await student.save(); 
-    const newUser = new Student({email:em,password:password,collegeCode:collegeCode})
-    await newUser.save();
-    console.log(`Registration successful for email: ${em}`);
-  res.json({ success: true, message: 'Registration successful!' });
+  if (enteredOtp == storedOtp) {
+
+
+    const college = await College.findOne({ code: student.collegeCode });
+    console.log(college)
+    if (college != null) {
+      const { collegeCode, password } = req.body
+
+      college.students.push(student._id);
+      await college.save();
+      // await student.save(); 
+      const newUser = new Student({ email: em, password: password, collegeCode: collegeCode })
+      await newUser.save();
+      console.log(`Registration successful for email: ${em}`);
+      res.json({ success: true, message: 'Registration successful!' });
+    }
+    else {
+      res.json({ error: "nothing found" })
+    }
+
   }
-  else{
-    res.json({error:"nothing found"})
+  else {
+    res.json("incorect oopt")
   }
-  
-}
-else{
-  res.json("incorect oopt")
-}
 })
 
 
@@ -181,7 +180,7 @@ app.get('/students/:collegeCode', async (req, res) => {
     const college = await College.findOne({ code: collegeCode }).populate('students');
     if (!college) {
       res.status(404).json({ error: 'College not found.' });
-      return; 
+      return;
     }
     res.json(college.students);
     console.log(college.students)

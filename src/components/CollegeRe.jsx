@@ -61,7 +61,11 @@ const AppointmentForm = () => {
                 <div className="validate"></div>
               </div>
               <div className="col-md-4 form-group mt-3 mt-md-0">
+
                 <input type="password" value={adminPassword} onChange={ev => setAdminPassword(ev.target.value)} className="form-control" name="email" id="email" placeholder="Password" data-rule="minlen:4" data-msg="Please enter at least 4 chars" />
+
+                <input type="text" value={adminPassword} onChange={ev => setAdminPassword(ev.target.value)} className="form-control" name="email" id="email" placeholder="Alternate Admin Email" data-rule="minlen:4" data-msg="Please enter at least 4 chars" />
+
                 <div className="validate"></div>
               </div>
             </div>

@@ -5,6 +5,7 @@ require("./db");
 var cors = require('cors')
 const app = express();
 const PORT = 5000;
+
 const multer = require('multer');
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -103,6 +104,7 @@ async function sendOTP(email, otp) {
     text: `Your OTP is: ${otp}`,
   };
 
+
   await transporter.sendMail(mailOptions);
 }
 
@@ -117,6 +119,12 @@ app.post('/registerStudent', async (req, res) => {
     }     
 
 
+  await transporter.sendMail(mailOptions);
+}
+
+app.post('/registerStudent', async (req, res) => {
+
+
   const enteredOtp = req.body.otp;
   const em = req.body.email;
   // const em = "insanegaming5587@gmail.com"
@@ -124,6 +132,7 @@ app.post('/registerStudent', async (req, res) => {
 
   const storedOtp = otpMap[em];
   console.log(storedOtp)
+
   
   if (!storedOtp) {
     return res.status(400).json({ message: 'Email not registered. Please register first.' });
@@ -136,6 +145,18 @@ app.post('/registerStudent', async (req, res) => {
   }
   
    if(enteredOtp == storedOtp){
+
+
+  // if (!storedOtp) {
+  //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
+  // }
+
+  // const collegeCname = collegeCodeMap.get(student.collegeCode);
+  // if (!collegeCname) {
+  //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
+  //   return;
+  // }
+
 
   if (enteredOtp == storedOtp) {
 
@@ -161,7 +182,10 @@ app.post('/registerStudent', async (req, res) => {
   else {
     res.json("incorect oopt")
   }
+
 }
+
+
 })
 
 

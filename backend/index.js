@@ -6,11 +6,16 @@ var cors = require('cors')
 const app = express();
 const PORT = 5000;
 
+const multer = require('multer');
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(cors());
 app.use(express.json());
 
 const College = require("./models/CollegeSchema");
 const Student = require("./models/StudentSchema");
+const Project = require("./models/ProjectSchema")
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -99,10 +104,26 @@ async function sendOTP(email, otp) {
     text: `Your OTP is: ${otp}`,
   };
 
+
   await transporter.sendMail(mailOptions);
 }
 
 app.post('/registerStudent', async (req, res) => {
+
+  const email = req.body.email;
+  const existingStudent = await Student.findOne({ email });
+
+    if(existingStudent)
+    {
+      return res.status(409).json({ message: 'Email already exists. Please use a different email.' });
+    }     
+
+
+  await transporter.sendMail(mailOptions);
+}
+
+app.post('/registerStudent', async (req, res) => {
+
 
   const enteredOtp = req.body.otp;
   const em = req.body.email;
@@ -111,6 +132,20 @@ app.post('/registerStudent', async (req, res) => {
 
   const storedOtp = otpMap[em];
   console.log(storedOtp)
+
+  
+  if (!storedOtp) {
+    return res.status(400).json({ message: 'Email not registered. Please register first.' });
+  }
+  
+  const collegeCname = collegeCodeMap.get(student.collegeCode);
+  if (!collegeCname) {
+    res.status(404).json({ message: 'College not found for the given collegeCode.' });
+    return;
+  }
+  
+   if(enteredOtp == storedOtp){
+
 
   // if (!storedOtp) {
   //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
@@ -121,6 +156,7 @@ app.post('/registerStudent', async (req, res) => {
   //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
   //   return;
   // }
+
 
   if (enteredOtp == storedOtp) {
 
@@ -146,6 +182,10 @@ app.post('/registerStudent', async (req, res) => {
   else {
     res.json("incorect oopt")
   }
+
+}
+
+
 })
 
 
@@ -161,8 +201,6 @@ app.post('/Studentlogin', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // If email and password are correct, you can generate a JWT token for authentication
-    // For simplicity, let's just respond with a success message
     res.json({ success: true, message: 'Login successful!' });
   } catch (error) {
     console.error(error);
@@ -170,6 +208,95 @@ app.post('/Studentlogin', async (req, res) => {
   }
 });
 
+// All Project apis
+// const path = require('path');
+// const static_path = path.join(__dirname, "/upload");
+// console.log(static_path)  
+// app.use(express.static(static_path)) 
+// app.use(express.static("upload")) 
+ 
+// Set up Multer for file uploads
+
+// const storage = multer.diskStorage({
+//   destination: "upload",
+//   filename: (req, file, cb) => {
+//       cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname))
+//   }
+// })
+// const upload = multer({ storage: storage })  
+
+// app.post('/upload', upload.single('pdf'), (req, res) => {
+//   const { Projectname,Description } = req.body;
+//   const pdfPath = req.file.filename;
+
+//   // Save project details to MongoDB
+//   const newProject = new Project({
+//     Projectname: Projectname, 
+//     // Tag: Tag,        
+//     Description: Description,  
+//     pdfPath: pdfPath
+//   });
+
+//   newProject.save()
+//   .then(() => {
+//     res.send('Project uploaded successfully!');
+//   })
+//   .catch(err => {
+//     console.error(err);
+//     res.send("not done")
+//   });
+
+// });
+
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+  const { name, description ,tag,url } = req.body;
+  const filePath = req.file.path;
+  isGlobal = false; 
+  CollegeCode = "2020";
+
+  const newFile = new Project({filePath,name,description ,tag,isGlobal,CollegeCode,url });
+   
+  try {
+    await newFile.save();
+    res.status(201).send('File uploaded successfully');
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.get('/projects/', async (req, res) => {
+  try {
+    const projects = await Project.find();
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/projects/:collegeCode', async (req, res) => {
+  const { collegeCode } = req.params;
+
+  try {
+    const projects = await Project.find({ CollegeCode: collegeCode });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
 

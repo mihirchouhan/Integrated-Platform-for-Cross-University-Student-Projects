@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 
 const projectschema = new mongoose.Schema({
-  itemId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-  },
+  // itemId: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   required: true,
+  // },
   name: { type: String, required: true },
   description: { type: String, required: true },
   tag: { type: String, required: true,  },

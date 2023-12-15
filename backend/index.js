@@ -238,13 +238,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.post('/upload', upload.single('file'), async (req, res) => {
-  const { name, description ,tag,url,itemId } = req.body;
-  // const filePath = req.file.path;
+  const { name, description ,tag,url } = req.body;
+  const filePath = req.file.path;
   isGlobal = false; 
   CollegeCode = "2020";
 
   const newFile = new Project({filePath,name,description ,tag,isGlobal,CollegeCode,url });
-  
+   
   try {
     await newFile.save();
     res.status(201).send('File uploaded successfully');

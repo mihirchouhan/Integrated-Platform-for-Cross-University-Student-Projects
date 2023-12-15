@@ -1,7 +1,6 @@
 import React from 'react'
 import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
-
 const StudentLogin = () => {
     const navigate = useNavigate();
     const [email,setEmail]=useState("")

@@ -2,12 +2,11 @@ import React from 'react'
 import {useLocation,} from 'react-router-dom'
 import { useState } from 'react'
 import '../styles/StudentOtp.css'
-import { useNavigate } from "react-router-dom";
 
 
 const StudentOtp = () => {
 
-  const navigate = useNavigate();
+
     const location = useLocation()
     const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
@@ -25,9 +24,8 @@ const StudentOtp = () => {
         })
         const note = await api.json();
         if(note.success){
-          navigate('/signin')
             alert("registered")
-            
+            console.log("wowo")
         }
         else{
             alert(note.message)

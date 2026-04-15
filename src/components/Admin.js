@@ -39,7 +39,7 @@
         
             if (validateForm()) {
               // Proceed with login logic
-              if (email === 'Amin999@gmail.com' && password === '9595') {
+              if (email === 'Admin@gmail.com' && password === '1234') {
                 navigate('/CollegeRe');
               } else {
                 console.log('bad');

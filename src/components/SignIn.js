@@ -1,90 +1,107 @@
-import React, { useState } from 'react';
-import './SignIn.css'; 
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 
 
-// Functional component for SignIn
 const SignIn = () => {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  // Function to handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add logic for handling form submission
-    // You can use state or any state management library for form handling
+    setStatus("Signing in...");
+    try {
+      const res = await fetch("http://localhost:5000/Studentlogin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setStatus(data?.message || "Invalid credentials");
+        return;
+      }
+      setStatus("Login successful");
+      if (data?.token) {
+        localStorage.setItem("studentToken", data.token);
+      }
+      if (data?.user?.email) localStorage.setItem("studentEmail", data.user.email);
+      if (data?.user?.collegeCode)
+        localStorage.setItem("studentCollegeCode", data.user.collegeCode);
+      navigate("/projects");
+    } catch (err) {
+      setStatus(err?.message || "Login failed");
+    }
   };
 
   return (
-    <div className="main">
-      {/* Sign in Form */}
-      <section className="sign-in">
-        <div className="container">
-          <div className="signin-content">
-            <div className="signin-image">
-              <figure>
-                <img src="img.jpg" alt="sign up image" />
-              </figure>
-              <a href="registration.jsp" className="signup-image-link">
-                Sign In
-              </a>
-            </div>
+    <div className="app-page">
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-8 col-lg-6">
+          <div className="app-card">
+            <div className="app-card-body">
+              <h2 className="mb-1">Student Sign in</h2>
+              <p className="app-muted mb-4">
+                Sign in with your registered college email to upload projects and
+                interact with global projects.
+              </p>
 
-            <div className="signin-form">
-              <h2 className="form-title">Sign in</h2>
-              <form
-                method="post"
-                action="login"
-                className="register-form"
-                id="login-form"
-                onSubmit={handleSubmit}
-              >
-                <div className="form-group">
-                  <label htmlFor="username">
-                    <i className="zmdi zmdi-account material-icons-name"></i>
+              <form onSubmit={handleSubmit} className="d-grid gap-3">
+                <div>
+                  <label className="form-label" htmlFor="email">
+                    Email
                   </label>
                   <input
-                    type="Email"
-                    name="username"
-                    id="username"
-                    placeholder="Enter Your College Email"
-                    required="required"
+                    className="form-control"
+                    type="email"
+                    id="email"
+                    placeholder="student@college.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="password">
-                    <i className="zmdi zmdi-lock"></i>
+
+                <div>
+                  <label className="form-label" htmlFor="password">
+                    Password
                   </label>
                   <input
+                    className="form-control"
                     type="password"
-                    name="password"
                     id="password"
                     placeholder="Password"
-                    required="required"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
-                <div className="form-group">
-                  <input
-                    type="checkbox"
-                    name="remember-me"
-                    id="remember-me"
-                    className="agree-term"
-                  />
-                  
+
+                <button type="submit" className="btn btn-primary">
+                  Log in
+                </button>
+
+                <div className="d-flex justify-content-between flex-wrap gap-2">
+                  <Link className="btn btn-soft" to="/student/signup">
+                    New user? Signup (OTP)
+                  </Link>
+                  <Link className="btn btn-soft" to="/">
+                    Back to Global
+                  </Link>
                 </div>
-                <div className="form-group form-button">
-                  <input
-                    type="submit"
-                    name="signin"
-                    id="signin"
-                    className="form-submit"
-                    value="Log in"
-                  />
-                </div>
+
+                {status ? (
+                  <div className="alert alert-info mb-0" role="alert">
+                    {status}
+                  </div>
+                ) : null}
               </form>
             </div>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const StudentLogin = () => {
     const navigate = useNavigate();
@@ -17,8 +18,8 @@ const StudentLogin = () => {
         })
         const note = await api.json();
         console.log(note)
-        if(note.succes){
-            navigate('/enter',{state:{
+        if(note.success){
+            navigate('/student/otp',{state:{
                 email,code
             }})
         }
@@ -30,10 +31,29 @@ const StudentLogin = () => {
 
 
   return (
-    <div>
-        <input type='email' value={email} onChange={ev=>setEmail(ev.target.value)} placeholder='enter your email'/>
-        <input type='text' value={code} onChange={ev=>setCode(ev.target.value)} placeholder='enter your college code'/>
-        <button onClick={doit}> req for otp</button>
+    <div style={{ maxWidth: 520, margin: "40px auto", padding: 16 }}>
+      <h2>Student Signup (OTP)</h2>
+      <p style={{ marginTop: 4, color: "#555" }}>
+        Enter your college email and college code to receive OTP.
+      </p>
+      <div style={{ display: "grid", gap: 10 }}>
+        <input
+          type="email"
+          value={email}
+          onChange={(ev) => setEmail(ev.target.value)}
+          placeholder="Enter your college email"
+        />
+        <input
+          type="text"
+          value={code}
+          onChange={(ev) => setCode(ev.target.value)}
+          placeholder="Enter your college code"
+        />
+        <button onClick={doit}>Request OTP</button>
+        <div style={{ fontSize: 13 }}>
+          Already registered? <Link to="/student/signin">Sign in</Link>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,325 +1,468 @@
 const express = require("express");
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-require("./db");
-var cors = require('cors')
-const app = express();
-const PORT = 5000;
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+const cors = require("cors");
+const multer = require("multer");
+const bodyParser = require("body-parser");
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
-const multer = require('multer');
-const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(cors());
-app.use(express.json());
+require("./db");
 
 const College = require("./models/CollegeSchema");
 const Student = require("./models/StudentSchema");
-const Project = require("./models/ProjectSchema")
+const Project = require("./models/ProjectSchema");
 
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+
+/* ------------------ MIDDLEWARE ------------------ */
+app.use(cors());
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+function signToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+}
+
+function authRequired(role) {
+  return (req, res, next) => {
+    try {
+      const header = req.headers.authorization || "";
+      const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+      if (!token) return res.status(401).json({ message: "Missing token" });
+      const decoded = jwt.verify(token, JWT_SECRET);
+      if (role && decoded.role !== role) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      req.auth = decoded;
+      next();
+    } catch (e) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+  };
+}
+
+/* ------------------ EMAIL CONFIG ------------------ */
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: process.env.MAIL_SERVICE || "gmail",
   auth: {
-    user: 'njain5587@gmail.com',
-    pass: 'lwpz kkyp syzo ifdl',
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
   },
 });
 
-
-// Create a dynamic map to store the relationship between college code and Cname
+/* ------------------ COLLEGE CODE MAP ------------------ */
 const collegeCodeMap = new Map();
 
-// Populate the map when the server starts
 (async () => {
   try {
     const colleges = await College.find();
     colleges.forEach(college => {
       collegeCodeMap.set(college.code, college.Cname);
-      console.log(collegeCodeMap)
     });
-  } catch (error) {
-    console.error("Error populating collegeCodeMap:", error.message);
+    console.log("College map loaded");
+  } catch (err) {
+    console.error(err.message);
   }
 })();
 
+/* ------------------ OTP STORE ------------------ */
+const otpMap = {};
 
-app.post('/registerCollege', async (req, res) => {
-  try {
-    const college = new College(req.body);
-    await college.save();
-
-    collegeCodeMap.set(college.code, college.Cname);
-    console.log(collegeCodeMap)
-
-    res.json(college);
-    console.log("done")
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-let otpMap = {};
-app.post('/sendotp', async (req, res) => {
-  try {
-    const student = new Student(req.body);
-    const email = req.body.email;
-    const existingStudent = await Student.findOne({ email });
-
-    if (existingStudent) {
-      return res.status(409).json({ error: 'Email already exists. Please use a different email.' });
-    }
-
-
-    const collegeCname = collegeCodeMap.get(student.collegeCode);
-    const emailDomain = student.email.split('@')[1];
-    console.log(collegeCname)
-    console.log(emailDomain)
-    if (collegeCname.toLowerCase() == emailDomain.toLowerCase()) {
-      var otp = generateOTP();
-      console.log(otpMap)
-      otpMap[student.email] = otp.toString();
-      console.log(otpMap)
-      await sendOTP(student.email, otp);
-      res.json({ message: 'OTP sent successfully', succes: true });
-    }
-    else {
-      res.json("wrong Credentails")
-    }
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
+/* ------------------ UTIL FUNCTIONS ------------------ */
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Function to send OTP via email
 async function sendOTP(email, otp) {
-  const mailOptions = {
-    from: 'njain5587@gmail.com',
-    to: email,
-    subject: 'Otp functinality bhi implement ker di hai',
-    text: `Your OTP is: ${otp}`,
-  };
-
-
-  await transporter.sendMail(mailOptions);
-}
-
-app.post('/registerStudent', async (req, res) => {
-
-  const email = req.body.email;
-  const existingStudent = await Student.findOne({ email });
-
-    if(existingStudent)
-    {
-      return res.status(409).json({ message: 'Email already exists. Please use a different email.' });
-    }     
-
-
-  await transporter.sendMail(mailOptions);
-}
-
-app.post('/registerStudent', async (req, res) => {
-
-
-  const enteredOtp = req.body.otp;
-  const em = req.body.email;
-  // const em = "insanegaming5587@gmail.com"
-  const student = new Student(req.body);
-
-  const storedOtp = otpMap[em];
-  console.log(storedOtp)
-
-  
-  if (!storedOtp) {
-    return res.status(400).json({ message: 'Email not registered. Please register first.' });
-  }
-  
-  const collegeCname = collegeCodeMap.get(student.collegeCode);
-  if (!collegeCname) {
-    res.status(404).json({ message: 'College not found for the given collegeCode.' });
+  // Dev fallback: allow development without email credentials.
+  // If OTP_DEV_MODE=true, we will log the OTP to the server console instead of emailing it.
+  if (process.env.OTP_DEV_MODE === "true") {
+    console.log(`[OTP_DEV_MODE] OTP for ${email}: ${otp}`);
     return;
   }
-  
-   if(enteredOtp == storedOtp){
 
-
-  // if (!storedOtp) {
-  //   return res.status(400).json({ error: 'Email not registered. Please register first.' });
-  // }
-
-  // const collegeCname = collegeCodeMap.get(student.collegeCode);
-  // if (!collegeCname) {
-  //   res.status(404).json({ error: 'College not found for the given collegeCode.' });
-  //   return;
-  // }
-
-
-  if (enteredOtp == storedOtp) {
-
-
-    const college = await College.findOne({ code: student.collegeCode });
-    console.log(college)
-    if (college != null) {
-      const { collegeCode, password } = req.body
-
-      college.students.push(student._id);
-      await college.save();
-      // await student.save(); 
-      const newUser = new Student({ email: em, password: password, collegeCode: collegeCode })
-      await newUser.save();
-      console.log(`Registration successful for email: ${em}`);
-      res.json({ success: true, message: 'Registration successful!' });
-    }
-    else {
-      res.json({ error: "nothing found" })
-    }
-
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) {
+    throw new Error(
+      "Email credentials not configured. Set MAIL_USER and MAIL_PASS in backend/.env, or set OTP_DEV_MODE=true to log OTP in console."
+    );
   }
-  else {
-    res.json("incorect oopt")
-  }
-
+  const mailOptions = {
+    from: process.env.MAIL_FROM || process.env.MAIL_USER,
+    to: email,
+    subject: "OTP Verification",
+    text: `Your OTP is: ${otp}`,
+  };
+  await transporter.sendMail(mailOptions);
 }
 
+/* ------------------ COLLEGE REGISTRATION ------------------ */
+app.post("/registerCollege", async (req, res) => {
+  try {
+    const { code, Cname, CollegeAdmin, CollegeAdminPassword } = req.body;
+    const hashed = await bcrypt.hash(CollegeAdminPassword, 10);
+    const college = new College({
+      code,
+      Cname,
+      CollegeAdmin,
+      CollegeAdminPassword: hashed,
+    });
+    await college.save();
 
-})
+    collegeCodeMap.set(college.code, college.Cname);
+    res.json(college);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
+/* ------------------ COLLEGE ADMIN LOGIN ------------------ */
+app.post("/college/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const college = await College.findOne({ CollegeAdmin: email });
+    if (!college) return res.status(401).json({ message: "Invalid credentials" });
 
-app.post('/Studentlogin', async (req, res) => {
+    const stored = college.CollegeAdminPassword;
+    const ok =
+      stored?.startsWith("$2") ? await bcrypt.compare(password, stored) : stored === password;
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+
+    // migrate plaintext -> hash if needed
+    if (stored && !stored.startsWith("$2")) {
+      college.CollegeAdminPassword = await bcrypt.hash(password, 10);
+      await college.save();
+    }
+
+    const token = signToken({ role: "collegeAdmin", collegeCode: college.code, email });
+    res.json({
+      success: true,
+      token,
+      college: { code: college.code, Cname: college.Cname, CollegeAdmin: college.CollegeAdmin },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ SEND OTP ------------------ */
+app.post("/sendotp", async (req, res) => {
+  try {
+    const { email, collegeCode } = req.body;
+
+    const existingStudent = await Student.findOne({ email });
+    if (existingStudent) {
+      return res.status(409).json({ message: "Email already exists" });
+    }
+
+    const collegeDomain = collegeCodeMap.get(collegeCode);
+    if (!collegeDomain) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    const emailDomain = email.split("@")[1];
+
+    if (collegeDomain.toLowerCase() !== emailDomain.toLowerCase()) {
+      return res.status(401).json({ message: "Invalid college email" });
+    }
+
+    const otp = generateOTP();
+    otpMap[email] = otp;
+
+    await sendOTP(email, otp);
+
+    res.json({ success: true, message: "OTP sent successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ STUDENT REGISTRATION (OTP VERIFY) ------------------ */
+app.post("/registerStudent", async (req, res) => {
+  try {
+    const { email, password, collegeCode, otp } = req.body;
+
+    const storedOtp = otpMap[email];
+    if (!storedOtp) {
+      return res.status(400).json({ message: "OTP expired or not found" });
+    }
+
+    if (otp !== storedOtp) {
+      return res.status(401).json({ message: "Invalid OTP" });
+    }
+
+    const existingStudent = await Student.findOne({ email });
+    if (existingStudent) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+
+    const college = await College.findOne({ code: collegeCode });
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const student = new Student({ email, password: hashed, collegeCode });
+    await student.save();
+
+    college.students.push(student._id);
+    await college.save();
+
+    delete otpMap[email];
+
+    res.json({ success: true, message: "Student registered successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ STUDENT LOGIN ------------------ */
+app.post("/Studentlogin", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find the user with the provided email
     const user = await Student.findOne({ email });
-
-    // If the user is not found, or the password is incorrect, return an error
-    if (!user || user.password !== password) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    res.json({ success: true, message: 'Login successful!' });
+    const stored = user.password;
+    const ok =
+      stored?.startsWith("$2") ? await bcrypt.compare(password, stored) : stored === password;
+    if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (stored && !stored.startsWith("$2")) {
+      user.password = await bcrypt.hash(password, 10);
+      await user.save();
+    }
+
+    const token = signToken({
+      role: "student",
+      email: user.email,
+      collegeCode: user.collegeCode,
+    });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: { email: user.email, collegeCode: user.collegeCode },
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// All Project apis
-// const path = require('path');
-// const static_path = path.join(__dirname, "/upload");
-// console.log(static_path)  
-// app.use(express.static(static_path)) 
-// app.use(express.static("upload")) 
- 
-// Set up Multer for file uploads
-
-// const storage = multer.diskStorage({
-//   destination: "upload",
-//   filename: (req, file, cb) => {
-//       cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname))
-//   }
-// })
-// const upload = multer({ storage: storage })  
-
-// app.post('/upload', upload.single('pdf'), (req, res) => {
-//   const { Projectname,Description } = req.body;
-//   const pdfPath = req.file.filename;
-
-//   // Save project details to MongoDB
-//   const newProject = new Project({
-//     Projectname: Projectname, 
-//     // Tag: Tag,        
-//     Description: Description,  
-//     pdfPath: pdfPath
-//   });
-
-//   newProject.save()
-//   .then(() => {
-//     res.send('Project uploaded successfully!');
-//   })
-//   .catch(err => {
-//     console.error(err);
-//     res.send("not done")
-//   });
-
-// });
-
-
-
+/* ------------------ FILE UPLOAD ------------------ */
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
-  },
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname),
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-app.post('/upload', upload.single('file'), async (req, res) => {
-  const { name, description ,tag,url } = req.body;
-  const filePath = req.file.path;
-  isGlobal = false; 
-  CollegeCode = "2020";
-
-  const newFile = new Project({filePath,name,description ,tag,isGlobal,CollegeCode,url });
-   
+app.post("/upload", authRequired("student"), upload.single("file"), async (req, res) => {
   try {
-    await newFile.save();
-    res.status(201).send('File uploaded successfully');
+    const { name, description, tag, url } = req.body;
+    const collegeCode = req.auth.collegeCode;
+    const email = req.auth.email;
+
+    const project = new Project({
+      filePath: req.file.path,
+      name,
+      description,
+      tag,
+      url,
+      isGlobal: false,
+      CollegeCode: collegeCode,
+      createdByEmail: email,
+    });
+
+    await project.save();
+    res.status(201).json({ message: "File uploaded successfully" });
   } catch (err) {
-    res.status(500).send(err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
-
-app.get('/projects/', async (req, res) => {
+/* ------------------ PROJECT FETCH ------------------ */
+app.get("/projects", async (req, res) => {
   try {
-    const projects = await Project.find();
-    res.status(200).json(projects);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const { q, tag, collegeCode, isGlobal } = req.query;
+    const filter = {};
 
-app.get('/projects/:collegeCode', async (req, res) => {
-  const { collegeCode } = req.params;
+    if (typeof tag === "string" && tag.trim()) filter.tag = tag.trim();
+    if (typeof collegeCode === "string" && collegeCode.trim())
+      filter.CollegeCode = collegeCode.trim();
+    if (typeof isGlobal === "string" && isGlobal.trim() !== "")
+      filter.isGlobal = isGlobal === "true";
 
-  try {
-    const projects = await Project.find({ CollegeCode: collegeCode });
-    res.status(200).json(projects);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    let query = Project.find(filter);
 
-
-
-
-app.get('/students/:collegeCode', async (req, res) => {
-  try {
-    const collegeCode = req.params.collegeCode;
-    const college = await College.findOne({ code: collegeCode }).populate('students');
-    if (!college) {
-      res.status(404).json({ error: 'College not found.' });
-      return;
+    if (typeof q === "string" && q.trim()) {
+      const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      query = query.find({
+        $or: [{ name: rx }, { description: rx }, { tag: rx }, { CollegeCode: rx }],
+      });
     }
-    res.json(college.students);
-    console.log(college.students)
+
+    const projects = await query.sort({ _id: -1 });
+    res.json(projects);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+/* ------------------ GLOBAL PROJECTS (PUBLIC) ------------------ */
+app.get("/projects/global", async (req, res) => {
+  try {
+    const { q, tag, collegeCode } = req.query;
+    const limitRaw = req.query.limit;
+    const limit =
+      typeof limitRaw === "string" && limitRaw.trim() !== ""
+        ? Math.max(1, Math.min(50, parseInt(limitRaw, 10)))
+        : null;
 
+    const filter = { isGlobal: true };
+    if (typeof tag === "string" && tag.trim()) filter.tag = tag.trim();
+    if (typeof collegeCode === "string" && collegeCode.trim())
+      filter.CollegeCode = collegeCode.trim();
 
+    let query = Project.find(filter);
 
+    if (typeof q === "string" && q.trim()) {
+      const rx = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      query = query.find({
+        $or: [{ name: rx }, { description: rx }, { tag: rx }, { CollegeCode: rx }],
+      });
+    }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    query = query.sort({ likes: -1, _id: -1 });
+    if (limit) query = query.limit(limit);
+    const projects = await query;
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
+
+/* ------------------ PROJECT DETAILS ------------------ */
+app.get("/projects/id/:id", async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    res.json(project);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ PROJECT LIKE (UPVOTE) ------------------ */
+app.post("/projects/:id/like", authRequired("student"), async (req, res) => {
+  try {
+    const email = req.auth.email;
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    if (project.likedBy?.includes(email)) {
+      return res.status(409).json({ message: "Already upvoted" });
+    }
+    project.likedBy.push(email);
+    project.likes = (project.likes || 0) + 1;
+    const updated = await project.save();
+    if (!updated) return res.status(404).json({ message: "Project not found" });
+    res.json({ success: true, likes: updated.likes });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ PROJECT COMMENTS (DISCUSS) ------------------ */
+app.get("/projects/:id/comments", async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id).select("comments");
+    if (!project) return res.status(404).json({ message: "Project not found" });
+    res.json(project.comments || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/projects/:id/comments", authRequired("student"), async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ message: "message is required" });
+    }
+    const authorEmail = req.auth.email;
+
+    const updated = await Project.findByIdAndUpdate(
+      req.params.id,
+      { $push: { comments: { email: authorEmail, message } } },
+      { new: true }
+    ).select("comments");
+
+    if (!updated) return res.status(404).json({ message: "Project not found" });
+    res.status(201).json(updated.comments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ APPROVE PROJECT TO GLOBAL ------------------ */
+app.patch("/projects/:id/approve", authRequired("collegeAdmin"), async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: "Project not found" });
+
+    if (project.CollegeCode !== req.auth.collegeCode) {
+      return res.status(403).json({ message: "Not allowed for this college" });
+    }
+
+    project.isGlobal = true;
+    await project.save();
+    res.json({ success: true, message: "Approved to global", project });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/projects/:collegeCode", async (req, res) => {
+  try {
+    const projects = await Project.find({
+      CollegeCode: req.params.collegeCode,
+    });
+    res.json(projects);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ STUDENTS BY COLLEGE ------------------ */
+app.get("/students/:collegeCode", async (req, res) => {
+  try {
+    const college = await College.findOne({ code: req.params.collegeCode })
+      .populate("students");
+
+    if (!college) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    res.json(college.students);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/* ------------------ SERVER START ------------------ */
+app.listen(PORT, () => {
+  console.log(` Server running on port ${PORT}`);
+});
+
+
+

@@ -12,12 +12,17 @@ const StudentOtp = () => {
     const location = useLocation()
     const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [status, setStatus] = useState('');
     const email = location.state.email
     const code = location.state.code
 
     const register = async (e)=>{
         e.preventDefault();
+        
+        if (password.length < 8) return setStatus("Password must be at least 8 characters long");
+        if (password !== confirmPassword) return setStatus("Passwords do not match");
+
         setStatus("Registering...");
         const api = await fetch("http://localhost:5000/registerStudent", {
             method: 'POST',
@@ -37,13 +42,9 @@ const StudentOtp = () => {
         }
     }
     
-    const handleOtpChange = (event) => {
-      setOtp(event.target.value);
-    };
-    const handlePasswordChange = (event) => {
-      setPassword(event.target.value);
-    };
-
+    const handleOtpChange = (event) => setOtp(event.target.value);
+    const handlePasswordChange = (event) => setPassword(event.target.value);
+    const handleConfirmPasswordChange = (event) => setConfirmPassword(event.target.value);
 
   return (
     <div className="app-page">
@@ -81,7 +82,21 @@ const StudentOtp = () => {
                     id="password"
                     value={password}
                     onChange={handlePasswordChange}
-                    placeholder="Create a password"
+                    placeholder="Create a password (min 8 chars)"
+                  />
+                </div>
+                
+                <div className="col-12">
+                  <label className="form-label" htmlFor="cpassword">
+                    Confirm password
+                  </label>
+                  <input
+                    className="form-control"
+                    type="password"
+                    id="cpassword"
+                    value={confirmPassword}
+                    onChange={handleConfirmPasswordChange}
+                    placeholder="Confirm password"
                   />
                 </div>
 

@@ -1,142 +1,132 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   const auth = useMemo(() => {
     const studentToken = localStorage.getItem("studentToken");
     const studentEmail = localStorage.getItem("studentEmail");
     const collegeAdminToken = localStorage.getItem("collegeAdminToken");
     const collegeAdminCode = localStorage.getItem("collegeAdminCode");
+    const recruiterToken = localStorage.getItem("recruiterToken");
+    const recruiterCompany = localStorage.getItem("recruiterCompany");
     return {
       isStudent: !!studentToken,
       studentEmail,
       isCollegeAdmin: !!collegeAdminToken,
       collegeAdminCode,
+      isRecruiter: !!recruiterToken,
+      recruiterCompany,
     };
+    // eslint-disable-next-line
   }, [location.pathname]);
 
-  const logoutStudent = () => {
-    localStorage.removeItem("studentToken");
-    localStorage.removeItem("studentEmail");
-    localStorage.removeItem("studentCollegeCode");
-    navigate("/");
+  const [theme, setTheme] = useState(localStorage.getItem("app-theme") || "dark");
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("app-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "dark" ? "light" : "dark");
   };
 
-  const logoutCollegeAdmin = () => {
-    localStorage.removeItem("collegeAdminToken");
-    localStorage.removeItem("collegeAdminCode");
-    navigate("/");
+  const logout = (keys, path = "/") => {
+    keys.forEach((k) => localStorage.removeItem(k));
+    navigate(path);
+  };
+
+  const navLink = (to, label) => {
+    const active = location.pathname === to;
+    return (
+      <Link to={to} className={`navbar-link${active ? " active" : ""}`} onClick={() => setOpen(false)}>
+        {label}
+      </Link>
+    );
   };
 
   return (
-    <div
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        background: "#0b1220",
-        color: "white",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "12px 16px",
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link
-            to="/"
-            style={{
-              color: "white",
-              textDecoration: "none",
-              fontWeight: 700,
-              letterSpacing: 0.3,
-            }}
-          >
-            SIH Project Platform
+    <nav className="navbar" id="main-navbar">
+      <div className={`navbar-inner${open ? " open" : ""}`}>
+        <div className="d-flex align-items-center gap-3">
+          <button className="navbar-toggle" onClick={() => setOpen(!open)} aria-label="Toggle menu">
+            {open ? "✕" : "☰"}
+          </button>
+          <Link to="/" className="navbar-brand" onClick={() => setOpen(false)}>
+            <span className="brand-icon">🧑🏻‍💻</span>
+            ProjectHub
           </Link>
-          <NavLink to="/">Global</NavLink>
-          <NavLink to="/projects">All Projects</NavLink>
-          <NavLink to="/project/upload">Upload</NavLink>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {!auth.isStudent ? (
+        <div className="navbar-links">
+          {navLink("/", "Global")}
+          {navLink("/projects", "All Projects")}
+          {navLink("/marketplace", "Marketplace")}
+          {(auth.isStudent || auth.isRecruiter) && navLink("/messages", "Messages")}
+          {auth.isStudent && navLink("/project/upload", "Upload")}
+          {auth.isStudent && navLink("/collaborate", "Code-Syncronix")}
+        </div>
+
+        <div className="navbar-actions">
+          <button className="btn btn-sm btn-soft rounded-circle px-2" onClick={toggleTheme} title="Toggle Theme" style={{ fontSize: '1.2rem', padding: '4px 8px', marginRight: '8px' }}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          {/* Student auth */}
+          {!auth.isStudent && !auth.isRecruiter && (
             <>
-              <NavLink to="/student/signup">Student Signup</NavLink>
-              <NavLink to="/student/signin">Student Signin</NavLink>
+              {navLink("/student/signin", "Sign in")}
+              {navLink("/student/signup", "Sign up")}
             </>
-          ) : (
+          )}
+          {auth.isStudent && (
             <>
-              <span style={{ opacity: 0.9, fontSize: 13 }}>
-                Student: {auth.studentEmail}
-              </span>
-              <button onClick={logoutStudent} style={btnStyle}>
+              <Link to="/profile" className="navbar-user" onClick={() => setOpen(false)}>
+                👤 {auth.studentEmail}
+              </Link>
+              <button className="btn btn-sm btn-soft" onClick={() => logout(["studentToken", "studentEmail", "studentCollegeCode"])}>
                 Logout
               </button>
             </>
           )}
 
-          <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.2)" }} />
+          <span className="navbar-divider" />
 
+          {/* College admin */}
           {!auth.isCollegeAdmin ? (
             <>
-              <NavLink to="/college/register">College Register</NavLink>
-              <NavLink to="/college/admin/login">Admin Login</NavLink>
+              {navLink("/college/register", "College Reg")}
+              {navLink("/college/admin/login", "Admin")}
             </>
           ) : (
             <>
-              <NavLink to="/college/admin/dashboard">
-                Dashboard ({auth.collegeAdminCode})
-              </NavLink>
-              <button onClick={logoutCollegeAdmin} style={btnStyle}>
+              {navLink("/college/admin/dashboard", `Dashboard (${auth.collegeAdminCode})`)}
+              <button className="btn btn-sm btn-soft" onClick={() => logout(["collegeAdminToken", "collegeAdminCode"])}>
+                Logout
+              </button>
+            </>
+          )}
+
+          <span className="navbar-divider" />
+
+          {/* Recruiter */}
+          {!auth.isRecruiter ? (
+            navLink("/recruiter/login", "Recruiter")
+          ) : (
+            <>
+              <Link to="/recruiter/dashboard" className="navbar-user" onClick={() => setOpen(false)}>
+                🏢 {auth.recruiterCompany}
+              </Link>
+              <button className="btn btn-sm btn-soft" onClick={() => logout(["recruiterToken", "recruiterEmail", "recruiterCompany"])}>
                 Logout
               </button>
             </>
           )}
         </div>
       </div>
-    </div>
+    </nav>
   );
 }
-
-function NavLink({ to, children }) {
-  const location = useLocation();
-  const active = location.pathname === to;
-  return (
-    <Link
-      to={to}
-      style={{
-        color: active ? "white" : "rgba(255,255,255,0.85)",
-        textDecoration: "none",
-        padding: "6px 10px",
-        borderRadius: 8,
-        background: active ? "rgba(255,255,255,0.12)" : "transparent",
-        fontSize: 13,
-      }}
-    >
-      {children}
-    </Link>
-  );
-}
-
-const btnStyle = {
-  background: "rgba(255,255,255,0.12)",
-  border: "1px solid rgba(255,255,255,0.18)",
-  color: "white",
-  padding: "6px 10px",
-  borderRadius: 8,
-  cursor: "pointer",
-  fontSize: 13,
-};
-

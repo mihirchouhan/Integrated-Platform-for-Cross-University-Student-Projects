@@ -1,61 +1,73 @@
-import React from 'react'
-import { useState } from 'react';
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 const StudentLogin = () => {
-    const navigate = useNavigate();
-    const [email,setEmail]=useState("")
-    const [code,setCode]=useState("")
-    const doit = async (e)=>{
-        e.preventDefault();
-        const api = await fetch("http://localhost:5000/sendotp", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({email:email,collegeCode:code})
-        })
-        const note = await api.json();
-        console.log(note)
-        if(note.success){
-            navigate('/student/otp',{state:{
-                email,code
-            }})
-        }
-        else{
-            alert("failed")
-        }
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState("");
 
+  const doit = async (e) => {
+    e.preventDefault();
+    setStatus("Sending OTP...");
+    try {
+      const res = await fetch("http://localhost:5000/sendotp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, collegeCode: code }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (data.devOtp) {
+          console.log(`%c[DEV] Your OTP is: ${data.devOtp}`, 'color: #6366f1; font-size: 18px; font-weight: bold;');
+          alert(`[DEV MODE] Your OTP is: ${data.devOtp}`);
+        }
+        navigate("/student/otp", { state: { email, code } });
+      } else {
+        setStatus(data.message || "Failed");
+      }
+    } catch (err) {
+      setStatus(err?.message || "Failed");
     }
-
+  };
 
   return (
-    <div style={{ maxWidth: 520, margin: "40px auto", padding: 16 }}>
-      <h2>Student Signup (OTP)</h2>
-      <p style={{ marginTop: 4, color: "#555" }}>
-        Enter your college email and college code to receive OTP.
-      </p>
-      <div style={{ display: "grid", gap: 10 }}>
-        <input
-          type="email"
-          value={email}
-          onChange={(ev) => setEmail(ev.target.value)}
-          placeholder="Enter your college email"
-        />
-        <input
-          type="text"
-          value={code}
-          onChange={(ev) => setCode(ev.target.value)}
-          placeholder="Enter your college code"
-        />
-        <button onClick={doit}>Request OTP</button>
-        <div style={{ fontSize: 13 }}>
-          Already registered? <Link to="/student/signin">Sign in</Link>
+    <div className="app-page">
+      <div className="row justify-content-center">
+        <div className="col-12 col-lg-6">
+          <div className="app-card">
+            <div className="app-card-body">
+              <div className="text-center mb-4">
+                <div style={{ fontSize: 48, marginBottom: 8 }}>✉️</div>
+                <h2 className="mb-1">Student Signup (OTP)</h2>
+                <p className="app-muted">Enter your college email and code to receive an OTP.</p>
+              </div>
+
+              <form onSubmit={doit} className="d-grid gap-3">
+                <div>
+                  <label className="form-label">College Email</label>
+                  <input className="form-control" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@college.edu" required />
+                </div>
+                <div>
+                  <label className="form-label">College Code</label>
+                  <input className="form-control" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Enter your college code" required />
+                </div>
+
+                <button type="submit" className="btn btn-primary btn-lg">Request OTP</button>
+
+                <div className="d-flex justify-content-between flex-wrap gap-2">
+                  <Link className="btn btn-soft" to="/student/signin">Already registered? Sign in</Link>
+                  <Link className="btn btn-soft" to="/">Back to Global</Link>
+                </div>
+
+                {status && <div className="alert alert-info mb-0">{status}</div>}
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default StudentLogin
+export default StudentLogin;

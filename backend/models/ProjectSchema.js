@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const commentSchema = new mongoose.Schema(
   {
@@ -8,28 +8,41 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true, _id: true }
 );
 
-const projectschema = new mongoose.Schema({
-  // itemId: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   required: true,
-  // },
-  name: { type: String, required: true },
-  description: { type: String, required: true },
-  tag: { type: String, required: true,  },
-  filePath: {
-    type: String,
-    required: true,
-  },
-  url:{type:String,trim: true},
-  likes: {
-    type: Number,
-    default: 0,
-  },
-  likedBy: { type: [String], default: [] }, // store student emails for now
-  isGlobal: { type: Boolean, required: true },
-  CollegeCode: { type: String, required: true },
-  createdByEmail: { type: String, required: true, trim: true },
-  comments: { type: [commentSchema], default: [] },
+const projectSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
 
-});
-module.exports = mongoose.model('Project', projectschema);
+    /* Legacy single tag kept for backward compat; new code uses tags[] */
+    tag: { type: String, default: "" },
+    tags: { type: [String], default: [] },
+
+    filePath: { type: String, required: true },
+    url: { type: String, trim: true },
+    githubLink: { type: String, trim: true, default: "" },
+
+    likes: { type: Number, default: 0 },
+    likedBy: { type: [String], default: [] },
+
+    isGlobal: { type: Boolean, default: false },
+    CollegeCode: { type: String, required: true },
+    createdByEmail: { type: String, required: true, trim: true },
+    teamMembers: { type: [String], default: [] },
+
+    comments: { type: [commentSchema], default: [] },
+
+    /* Plagiarism & lifecycle */
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Flagged"],
+      default: "Pending",
+    },
+    plagiarismScore: { type: Number, default: 0 },
+
+    /* Marketplace */
+    isMarketplaceListed: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Project", projectSchema);

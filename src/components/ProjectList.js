@@ -1,82 +1,92 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Link } from "react-router-dom";
+
+const API = "http://localhost:5000";
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const fetchProjects = async () => {
+    setLoading(true);
     try {
-      const params = {};
-      if (q.trim()) params.q = q.trim();
-      const response = await axios.get('http://localhost:5000/projects', { params });
-      setProjects(response.data);
+      const params = new URLSearchParams();
+      if (q.trim()) params.set("q", q.trim());
+      const response = await fetch(`${API}/projects?${params}`);
+      const data = await response.json();
+      setProjects(data);
     } catch (error) {
-      console.error('Error fetching projects:', error.message);
+      console.error('Error:', error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchProjects();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { fetchProjects(); /* eslint-disable-next-line */ }, []);
 
   return (
-    <div style={{ maxWidth: 980, margin: "24px auto", padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+    <div className="app-page">
+      <div className="d-flex flex-wrap gap-3 align-items-end justify-content-between mb-3">
         <div>
-          <h2 style={{ margin: 0 }}>All Projects</h2>
-          <p style={{ marginTop: 6, color: "#666" }}>
-            This shows every project in the database.
-          </p>
+          <h2 className="mb-1">All Projects</h2>
+          <p className="app-muted">Browse every project in the database.</p>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link to="/project/upload">Upload new</Link>
-          <Link to="/">Go to Global</Link>
+        <div className="d-flex gap-2">
+          <Link to="/project/upload" className="btn btn-soft">Upload</Link>
+          <Link to="/" className="btn btn-soft">Global</Link>
         </div>
       </div>
 
-      <div className="app-card" style={{ marginTop: 14 }}>
+      <div className="app-card mb-3">
         <div className="app-card-body d-flex flex-wrap gap-2 align-items-center">
           <input
             className="form-control"
-            style={{ maxWidth: 420 }}
+            style={{ maxWidth: 420, flex: 1 }}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by name, tag, college code…"
+            onKeyDown={(e) => e.key === "Enter" && fetchProjects()}
           />
-          <button className="btn btn-soft" onClick={fetchProjects}>
-            Search
-          </button>
+          <button className="btn btn-primary" onClick={fetchProjects}>Search</button>
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
-        {projects.map((project) => (
-          <div
-            key={project._id}
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              padding: 14,
-              background: "white",
-            }}
-          >
-            <h3 style={{ margin: 0 }}>{project.name}</h3>
-            <p style={{ margin: "6px 0 0" }}>{project.description}</p>
-            <p style={{ margin: "6px 0 0", color: "#666" }}>
-              Tag: {project.tag} • College: {project.CollegeCode} • Global:{" "}
-              {String(!!project.isGlobal)}
-            </p>
-            <div style={{ marginTop: 10 }}>
-              <Link to={`/projects/${project._id}`}>Open details</Link>
+      {loading && <div className="d-grid gap-3">{[1, 2, 3].map(i => <div key={i} className="skeleton skeleton-card" />)}</div>}
+
+      {!loading && projects.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">🔍</div>
+          <h3>No projects found</h3>
+        </div>
+      )}
+
+      <div className="d-grid gap-3">
+        {projects.map((project) => {
+          const tags = project.tags?.length ? project.tags : project.tag ? project.tag.split(",").map(t => t.trim()) : [];
+          return (
+            <div key={project._id} className="app-card">
+              <div className="app-card-body d-flex flex-wrap gap-3 justify-content-between">
+                <div style={{ flex: 1, minWidth: 280 }}>
+                  <Link to={`/projects/${project._id}`}><h5 className="mb-1">{project.name}</h5></Link>
+                  <p className="app-muted" style={{ fontSize: 14 }}>{project.description?.slice(0, 120)}…</p>
+                  <div className="d-flex gap-1 flex-wrap mt-2">
+                    <span className="badge badge-primary">{project.CollegeCode}</span>
+                    {project.isGlobal && <span className="badge badge-success">Global</span>}
+                    {tags.map((t, i) => <span key={i} className="tag">{t}</span>)}
+                  </div>
+                </div>
+                <div className="text-end">
+                  <div className="app-muted" style={{ fontSize: 13 }}>▲ {project.likes || 0}</div>
+                  <Link to={`/projects/${project._id}`} className="btn btn-sm btn-soft mt-2">View</Link>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
 
-export default ProjectList; 
+export default ProjectList;

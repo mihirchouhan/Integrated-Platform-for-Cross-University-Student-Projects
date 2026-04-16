@@ -1,106 +1,81 @@
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function CollegeRegistration() {
-  const [code, setCode] = useState("");
-  const [Cname, setCname] = useState("");
-  const [CollegeAdmin, setCollegeAdmin] = useState("");
-  const [CollegeAdminPassword, setCollegeAdminPassword] = useState("");
+  const [form, setForm] = useState({ code: "", Cname: "", CollegeAdmin: "", CollegeAdminPassword: "" });
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [status, setStatus] = useState("");
+  const navigate = useNavigate();
 
-  const registerCollege = async (e) => {
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const submit = async (e) => {
     e.preventDefault();
+    
+    if (form.CollegeAdminPassword.length < 8) return setStatus("Password must be at least 8 characters long");
+    if (form.CollegeAdminPassword !== confirmPassword) return setStatus("Passwords do not match");
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.CollegeAdmin)) return setStatus("Invalid admin email format");
+
     setStatus("Registering...");
     try {
       const res = await fetch("http://localhost:5000/registerCollege", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, Cname, CollegeAdmin, CollegeAdminPassword }),
+        body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setStatus(data?.error || data?.message || "Registration failed");
-        return;
-      }
-      setStatus("College registered successfully");
-      setCode("");
-      setCname("");
-      setCollegeAdmin("");
-      setCollegeAdminPassword("");
+      if (!res.ok) throw new Error(data?.error || data?.message || "Registration failed");
+      setStatus("College registered! Redirecting...");
+      setTimeout(() => navigate("/college/admin/login"), 1500);
     } catch (err) {
-      setStatus(err?.message || "Registration failed");
+      setStatus(err?.message || "Failed");
     }
   };
 
   return (
     <div className="app-page">
       <div className="row justify-content-center">
-        <div className="col-12 col-md-8 col-lg-6">
+        <div className="col-12 col-lg-6">
           <div className="app-card">
             <div className="app-card-body">
-              <h2 className="mb-1">College Registration</h2>
-              <p className="app-muted mb-4">
-                Register your institute and create a college admin account.
-              </p>
+              <div className="text-center mb-4">
+                <div style={{ fontSize: 48, marginBottom: 8 }}>🏛️</div>
+                <h2 className="mb-1">Register College</h2>
+                <p className="app-muted">Register your institution to enable student project approvals.</p>
+              </div>
 
-              <form onSubmit={registerCollege} className="d-grid gap-3">
+              <form onSubmit={submit} className="d-grid gap-3">
                 <div>
                   <label className="form-label">College Code</label>
-                  <input
-                    className="form-control"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="e.g. C-36075"
-                    required
-                  />
+                  <input className="form-control" value={form.code} onChange={set("code")} placeholder="e.g. IITP" required />
                 </div>
-
                 <div>
-                  <label className="form-label">College Domain</label>
-                  <input
-                    className="form-control"
-                    value={Cname}
-                    onChange={(e) => setCname(e.target.value)}
-                    placeholder="e.g. iitd.ac.in"
-                    required
-                  />
-                  <div className="form-text">
-                    Student emails must match this domain after @.
-                  </div>
+                  <label className="form-label">College Email Domain (Cname)</label>
+                  <input className="form-control" value={form.Cname} onChange={set("Cname")} placeholder="e.g. iitp.ac.in" required />
                 </div>
-
                 <div>
-                  <label className="form-label">College Admin Email</label>
-                  <input
-                    className="form-control"
-                    value={CollegeAdmin}
-                    onChange={(e) => setCollegeAdmin(e.target.value)}
-                    placeholder="admin@iitd.ac.in"
-                    type="email"
-                    required
-                  />
+                  <label className="form-label">Admin Email</label>
+                  <input className="form-control" type="email" value={form.CollegeAdmin} onChange={set("CollegeAdmin")} placeholder="admin@iitp.ac.in" required />
                 </div>
-
                 <div>
-                  <label className="form-label">College Admin Password</label>
-                  <input
-                    className="form-control"
-                    value={CollegeAdminPassword}
-                    onChange={(e) => setCollegeAdminPassword(e.target.value)}
-                    placeholder="Create a strong password"
-                    type="password"
-                    required
-                  />
+                  <label className="form-label">Admin Password</label>
+                  <input className="form-control" type="password" value={form.CollegeAdminPassword} onChange={set("CollegeAdminPassword")} placeholder="Strong password (min 8 chars)" required />
+                </div>
+                <div>
+                  <label className="form-label">Confirm Password</label>
+                  <input className="form-control" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm strong password" required />
                 </div>
 
-                <button type="submit" className="btn btn-primary">
-                  Register College
-                </button>
+                <button type="submit" className="btn btn-primary btn-lg">Register</button>
 
-                {status ? (
-                  <div className="alert alert-info mb-0" role="alert">
-                    {status}
-                  </div>
-                ) : null}
+                <div className="d-flex justify-content-between flex-wrap gap-2">
+                  <Link className="btn btn-soft" to="/college/admin/login">Already registered? Admin Login</Link>
+                  <Link className="btn btn-soft" to="/">Back to Global</Link>
+                </div>
+
+                {status && <div className="alert alert-info mb-0">{status}</div>}
               </form>
             </div>
           </div>
@@ -109,4 +84,3 @@ export default function CollegeRegistration() {
     </div>
   );
 }
-

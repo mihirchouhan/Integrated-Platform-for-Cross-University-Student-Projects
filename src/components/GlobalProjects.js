@@ -250,7 +250,7 @@ function ProjectCard({ project, onLike, onAddComment, onCommentsUpdated, feature
           <Link to={`/collaborate`} className="btn btn-sm btn-outline">
             🤝 Collaborate
           </Link>
-        </div>
+        </div> 
       </div>
 
       {showComments && (

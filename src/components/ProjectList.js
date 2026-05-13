@@ -24,7 +24,8 @@ const ProjectList = () => {
     }
   };
 
-  useEffect(() => { fetchProjects(); /* eslint-disable-next-line */ }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchProjects(); }, []);
 
   return (
     <div className="app-page">

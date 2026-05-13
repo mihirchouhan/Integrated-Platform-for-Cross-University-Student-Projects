@@ -5,6 +5,10 @@ import API_BASE_URL from '../apiConfig';
 
 const API = API_BASE_URL;
 
+const isApproved = (p) => p.isGlobal || p.status === "Approved";
+const isFlagged = (p) => p.status === "Flagged" && !isApproved(p);
+const isPending = (p) => !isApproved(p) && !isFlagged(p);
+
 export default function CollegeAdminDashboard() {
   const token = localStorage.getItem("collegeAdminToken");
   const collegeCode = localStorage.getItem("collegeAdminCode");
@@ -15,10 +19,6 @@ export default function CollegeAdminDashboard() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all"); // all, pending, flagged, approved
   const [isPasswordModalOpen, setPasswordModalOpen] = useState(false);
-
-  const isApproved = (p) => p.isGlobal || p.status === "Approved";
-  const isFlagged = (p) => p.status === "Flagged" && !isApproved(p);
-  const isPending = (p) => !isApproved(p) && !isFlagged(p);
 
   const filtered = useMemo(() => {
     let list = projects;
@@ -51,7 +51,8 @@ export default function CollegeAdminDashboard() {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
 
   const approve = async (projectId) => {
     try {

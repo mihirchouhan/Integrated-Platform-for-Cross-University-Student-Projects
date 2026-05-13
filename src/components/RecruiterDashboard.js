@@ -31,7 +31,8 @@ export default function RecruiterDashboard() {
     }
   };
 
-  useEffect(() => { fetchTalent(); /* eslint-disable-next-line */ }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchTalent(); }, []);
 
   const requestInterview = async (projectId) => {
     try {

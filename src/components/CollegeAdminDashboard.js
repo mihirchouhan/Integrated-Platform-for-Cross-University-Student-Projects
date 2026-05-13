@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import ChangePasswordModal from "./ChangePasswordModal";
+import API_BASE_URL from '../apiConfig';
 
-const API = "http://localhost:5000";
+const API = API_BASE_URL;
 
 export default function CollegeAdminDashboard() {
   const token = localStorage.getItem("collegeAdminToken");

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 const SignIn = () => {
   const [status, setStatus] = useState("");
@@ -15,7 +16,7 @@ const SignIn = () => {
 
     setStatus("Signing in...");
     try {
-      const res = await fetch("http://localhost:5000/Studentlogin", {
+      const res = await fetch(`${API_BASE_URL}/Studentlogin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

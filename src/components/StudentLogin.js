@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 const StudentLogin = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const StudentLogin = () => {
     e.preventDefault();
     setStatus("Sending OTP...");
     try {
-      const res = await fetch("http://localhost:5000/sendotp", {
+      const res = await fetch(`${API_BASE_URL}/sendotp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, collegeCode: code }),

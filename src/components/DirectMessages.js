@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import API_BASE_URL from '../apiConfig';
 
-const API = "http://localhost:5000";
-const SOCKET_URL = "http://localhost:5000";
+const API = API_BASE_URL;
+const SOCKET_URL = API_BASE_URL;
 
 export default function DirectMessages() {
   const studentToken = localStorage.getItem("studentToken");

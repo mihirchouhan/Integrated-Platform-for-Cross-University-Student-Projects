@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
-const API = "http://localhost:5000";
+const API = API_BASE_URL;
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);

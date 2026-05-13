@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 const Project = () => {
   const [file, setFile] = useState(null);
@@ -31,7 +32,7 @@ const Project = () => {
     formData.append('teamMembers', teamMembers);
 
     try {
-      const res = await axios.post('http://localhost:5000/upload', formData, {
+      const res = await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
       setStatus(res.data?.message || 'Uploaded!');

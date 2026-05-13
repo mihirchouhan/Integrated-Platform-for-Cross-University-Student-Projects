@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import API_BASE_URL from '../apiConfig';
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = API_BASE_URL;
 
 const LANGUAGES = ["javascript", "python", "java", "cpp", "html", "css", "typescript", "go", "rust", "sql"];
 
@@ -99,7 +100,7 @@ export default function CodeSyncronix() {
     setIsExecuting(true);
     setOutput("Executing...");
     try {
-      const response = await fetch("http://localhost:5000/api/run", {
+      const response = await fetch(`${API_BASE_URL}/api/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ language, code }),

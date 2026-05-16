@@ -57,7 +57,7 @@ export default function NavBar() {
             {open ? "✕" : "☰"}
           </button>
           <Link to="/" className="navbar-brand" onClick={() => setOpen(false)}>
-            <span className="brand-icon">🧑🏻‍💻</span>
+            <img src="/projecthub_logo.png" alt="ProjectHub Logo" className="brand-icon" style={{ height: "32px", width: "32px", objectFit: "cover", borderRadius: "50%", marginRight: "8px" }} />
             ProjectHub
           </Link>
         </div>

@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 
+import API_BASE_URL from '../apiConfig';
+
 const StudentOtp = () => {
 
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ const StudentOtp = () => {
         if (password !== confirmPassword) return setStatus("Passwords do not match");
 
         setStatus("Registering...");
-        const api = await fetch("http://localhost:5000/registerStudent", {
+        const api = await fetch(`${API_BASE_URL}/registerStudent`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

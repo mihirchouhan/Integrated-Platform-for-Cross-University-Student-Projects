@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ChangePasswordModal from "./ChangePasswordModal";
 
-const API = "http://localhost:5000";
+import API_BASE_URL from '../apiConfig';
+
+const API = API_BASE_URL;
 
 export default function StudentProfile() {
   const token = localStorage.getItem("studentToken");

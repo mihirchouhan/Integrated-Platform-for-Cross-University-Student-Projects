@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 export default function CollegeRegistration() {
   const [form, setForm] = useState({ code: "", Cname: "", CollegeAdmin: "", CollegeAdminPassword: "" });
@@ -20,7 +21,7 @@ export default function CollegeRegistration() {
 
     setStatus("Registering...");
     try {
-      const res = await fetch("http://localhost:5000/registerCollege", {
+      const res = await fetch(`${API_BASE_URL}/registerCollege`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

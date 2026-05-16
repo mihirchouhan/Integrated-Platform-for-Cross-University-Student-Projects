@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 export default function ForgotPassword() {
   const [role, setRole] = useState("student");
@@ -27,7 +28,7 @@ export default function ForgotPassword() {
     else if (role === "recruiter") endpoint = "/api/recruiter/forgot-password";
 
     try {
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -59,7 +60,7 @@ export default function ForgotPassword() {
     else if (role === "recruiter") endpoint = "/api/recruiter/reset-password";
 
     try {
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, newPassword }),

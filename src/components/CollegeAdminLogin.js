@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import API_BASE_URL from '../apiConfig';
 
 export default function CollegeAdminLogin() {
   const [email, setEmail] = useState("");
@@ -15,7 +16,7 @@ export default function CollegeAdminLogin() {
 
     setStatus("Signing in...");
     try {
-      const res = await fetch("http://localhost:5000/college/login", {
+      const res = await fetch(`${API_BASE_URL}/college/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import API_BASE_URL from '../apiConfig';
 
 const TeamRegistration = () => {
   const [teamName, setTeamName] = useState('');
@@ -13,7 +14,7 @@ const TeamRegistration = () => {
 
   const submitForm = async () => {
     try {
-      await axios.post('http://localhost:5000/api/teams', {
+      await axios.post(`${API_BASE_URL}/api/teams`, {
         name: teamName,
         members,
       });

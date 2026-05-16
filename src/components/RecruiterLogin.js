@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000";
+import API_BASE_URL from '../apiConfig';
+
+const API = API_BASE_URL;
 
 export default function RecruiterLogin() {
   const [email, setEmail] = useState("");

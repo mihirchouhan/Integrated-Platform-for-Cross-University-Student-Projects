@@ -3,6 +3,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
 import './CollegeRegistration.css';
 
+import API_BASE_URL from '../apiConfig';
+
 const AppointmentForm = () => {
 
 
@@ -16,7 +18,7 @@ const AppointmentForm = () => {
     e.preventDefault();
 
 
-    const api = await fetch("http://localhost:5000/registerCollege", {
+    const api = await fetch(`${API_BASE_URL}/registerCollege`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

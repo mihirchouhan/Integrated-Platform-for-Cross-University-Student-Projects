@@ -5,7 +5,7 @@
   <p align="center">
     <strong>Integrated Platform for Cross-University Student Projects</strong>
     <br/>
-    An academic ecosystem connecting Students, Universities, and Tech Recruiters.
+    An academic ecosystem connecting Students, Universities, and Tech Recruiters..
   </p>
   
   <p align="center">

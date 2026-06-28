@@ -25,7 +25,7 @@
 
 ## 📖 About The Project
 
-**ProjectHub** is a comprehensive full-stack platform designed to bridge the gap between academic projects and industry recruitment. By integrating multiple universities onto a single platform, ProjectHub allows students to upload their technical projects, get them peer-reviewed and faculty-approved, and showcase them to a global audience of top-tier recruiters.
+**ProjectHub** is a comprehensive full-stack platform designed to bridge the gap between academic projects and industry recruitment. By integrating multiple universities onto a single platform, ProjectHub allows students to upload their technical projects, get them peer-reviewed and faculty-approved, and showcase them to a global audience of top-tier recruiters...
 
 ### ✨ Key Features
 
